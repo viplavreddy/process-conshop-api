@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit-soap="http://www.mulesoft.org/schema/mule/apikit-soap" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/apikit-soap http://www.mulesoft.org/schema/mule/apikit-soap/current/mule-apikit-soap.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <http:listener-config name="api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081"/>
+    </http:listener-config>
+    <apikit-soap:config httpStatusVarName="httpStatus" name="soapkit-config" port="wsShopPreAuthSoap12" service="wsShopPreAuth" wsdlLocation="wsShopPreAuth.wsdl"/>
+    <http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="f7c94e7a-3143-40c5-92fc-bba372cb748f" >
+		<http:request-connection host="sys-sap-system-api.us-e2.cloudhub.io" />
+	</http:request-config>
+	<flow name="api-main">
+        <http:listener config-ref="api-httpListenerConfig" path="/wsShopPreAuth/wsShopPreAuthSoap12">
+            <http:response statusCode="#[attributes.additionalTransportData.statusCode default 200]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[attributes.protocolHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[attributes.additionalTransportData.statusCode default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[attributes.protocolHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit-soap:router config-ref="soapkit-config">
+            <apikit-soap:message>#[payload]</apikit-soap:message>
+            <apikit-soap:attributes>#[
+              %dw 2.0
+              output application/java
+              ---
+              {
+                  headers: attributes.headers,
+                  method: attributes.method,
+                  queryString: attributes.queryString
+            }]</apikit-soap:attributes>
+        </apikit-soap:router>
+    </flow>
+    <flow name="CreditAuthorization:\soapkit-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[output application/json
+---
+{
+	
+	"CreditAuthorization": {
+		"AccessLocId": payload.body.CreditAuthorization.AccessLocId,
+		"AccessCustId": payload.body.CreditAuthorization.AccessCustId
+	}
+
+}]]>
+                </ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="80ab6610-0411-43e5-8c0b-a44fe9487066" message='"The Request payload" #[payload]' category="Before Request"/>
+		<http:request method="POST" doc:name="Request" doc:id="006006c1-9162-47e5-9bfc-50c859a1d3e1" config-ref="HTTP_Request_configuration" path="sys-sap-api"/>
+		<logger level="INFO" doc:name="Logger" doc:id="5d29b1ff-e368-447d-8574-9f4ebe6d9b35" message="#[payload]" category="After Request"/>
+		<ee:transform doc:name="Transform Message" doc:id="2fa64eae-eb54-4fcf-9333-af916eb6f596" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[output application/java
+ns soap http://www.w3.org/2003/05/soap-envelope 
+ns xsi http://www.w3.org/2001/XMLSchema-instance
+---
+{
+	body: {
+		xsi#CreditAuthorizationResponse : {
+			CreditAuthorizationResult: payload.CreditAuthorizationResponse.CreditAuthorizationResult
+		}
+	} write "application/xml",
+	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="a02509dc-4498-4f53-8c91-daaa6421d318" type="ANY">
+				<ee:transform doc:name="Transform Message" doc:id="02625c1f-1433-454d-854f-363c682ebdef" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[output application/java
+ns soap http://www.w3.org/2003/05/soap-envelope 
+ns xsi http://www.w3.org/2001/XMLSchema-instance
+---
+{
+	body: {
+		xsi#CreditAuthorizationResponse : {
+			CreditAuthorizationResult: "ErrorHandling"
+		}
+	} write "application/xml",
+	
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+    </flow>
+</mule>
