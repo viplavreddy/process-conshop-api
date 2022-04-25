@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit-soap="http://www.mulesoft.org/schema/mule/apikit-soap" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/apikit-soap http://www.mulesoft.org/schema/mule/apikit-soap/current/mule-apikit-soap.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-    <http:listener-config name="api-httpListenerConfig">
+<mule xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit-soap="http://www.mulesoft.org/schema/mule/apikit-soap" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/apikit-soap http://www.mulesoft.org/schema/mule/apikit-soap/current/mule-apikit-soap.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+    <http:listener-config name="api-httpListenerConfig" basePath="process">
         <http:listener-connection host="0.0.0.0" port="8081"/>
     </http:listener-config>
     <apikit-soap:config httpStatusVarName="httpStatus" name="soapkit-config" port="wsShopPreAuthSoap12" service="wsShopPreAuth" wsdlLocation="wsShopPreAuth.wsdl"/>
@@ -9,6 +10,9 @@
 	</http:request-config>
 	<global-property doc:name="Global Property" doc:id="61a277c3-af7e-4653-bedb-9269723db002" name="env" value="Sandbox" />
 	<configuration-properties doc:name="Configuration properties" doc:id="9e44d087-7ad8-4994-b278-76b41f3f650f" file="${env}-config.yaml" />
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="b09e5f33-f0d0-4e94-add4-3f385b207f14" file="${env}-config.yaml" key="TA_Mulesoft" >
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
 	<flow name="api-main">
         <http:listener config-ref="api-httpListenerConfig" path="${http.basepath}">
             <http:response statusCode="#[attributes.additionalTransportData.statusCode default 200]">
@@ -49,8 +53,8 @@
             </ee:message>
         </ee:transform>
 		<logger level="INFO" doc:name="Logger" doc:id="80ab6610-0411-43e5-8c0b-a44fe9487066" message='"The Request payload" #[payload]' category="Before Request"/>
-		<http:request method="POST" doc:name="Request" doc:id="006006c1-9162-47e5-9bfc-50c859a1d3e1" config-ref="HTTP_Request_configuration" path="sys-sap-api"/>
 		<logger level="INFO" doc:name="Logger" doc:id="5d29b1ff-e368-447d-8574-9f4ebe6d9b35" message="#[payload]" category="After Request"/>
+		<flow-ref doc:name="Flow Reference" doc:id="bc9a2373-1fa4-4adc-a1c9-8dfdf5f20568" name="common-flowSub_Flow"/>
 		<ee:transform doc:name="Transform Message" doc:id="2fa64eae-eb54-4fcf-9333-af916eb6f596" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[output application/java
