@@ -38,8 +38,7 @@
       <applicationName>${cloudhub.application.name}</applicationName>
       <environment>${environment}</environment>      
       <workers>${workers}</workers>
-      <workerType>${workerType}</workerType>
-       <env>${environment}</env>
+      <workerType>${workerType}</workerType>     
       <objectStoreV2>true</objectStoreV2>
       <properties>
         <key>value</key>
