@@ -8,14 +8,13 @@
 		<http:request-connection host="sys-sap-system-api.us-e2.cloudhub.io" />
 	</http:request-config>
 	<flow name="api-main">
-        <http:listener config-ref="api-httpListenerConfig" path="/wsShopPreAuth/wsShopPreAuthSoap12">
+        <http:listener config-ref="api-httpListenerConfig" path="${http.basepath}">
             <http:response statusCode="#[attributes.additionalTransportData.statusCode default 200]">
-                <http:body>#[payload]</http:body>
-                <http:headers>#[attributes.protocolHeaders default {}]</http:headers>
+                <http:headers><![CDATA[#[attributes.protocolHeaders default {}]]]></http:headers>
             </http:response>
             <http:error-response statusCode="#[attributes.additionalTransportData.statusCode default 500]">
-                <http:body>#[payload]</http:body>
-                <http:headers>#[attributes.protocolHeaders default {}]</http:headers>
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[attributes.protocolHeaders default {}]]]></http:headers>
             </http:error-response>
         </http:listener>
         <apikit-soap:router config-ref="soapkit-config">
