@@ -7,8 +7,8 @@
     <http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="f7c94e7a-3143-40c5-92fc-bba372cb748f" >
 		<http:request-connection host="sys-sap-system-api.us-e2.cloudhub.io" />
 	</http:request-config>
-	<configuration-properties doc:name="Configuration properties" doc:id="ab8f3790-4b7f-4f82-9f72-a9cba7b69b47" file="${env}-config.yaml" />
-	<global-property doc:name="Global Property" doc:id="61a277c3-af7e-4653-bedb-9269723db002" name="env" value="dev" />
+	<configuration-properties doc:name="Configuration properties" doc:id="ab8f3790-4b7f-4f82-9f72-a9cba7b69b47" file="${environment}-config.yaml" />
+	<global-property doc:name="Global Property" doc:id="61a277c3-af7e-4653-bedb-9269723db002" name="environment" value="dev" />
 	<flow name="api-main">
         <http:listener config-ref="api-httpListenerConfig" path="${http.basepath}">
             <http:response statusCode="#[attributes.additionalTransportData.statusCode default 200]">
